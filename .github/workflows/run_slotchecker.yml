@@ -1,0 +1,35 @@
+    name: Uruchamiaj slotchecker raz dziennie
+
+    on:
+      # Umożliwia ręczne uruchamianie z przycisku w zakładce Actions
+      workflow_dispatch:
+
+      # Automatyczne uruchamianie o 21:10 UTC każdego dnia
+      schedule:
+        - cron: "5 8,11,14,17,20 * * *"
+
+    jobs:
+      run-slotchecker:
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Pobierz repozytorium
+            uses: actions/checkout@v4
+
+          - name: Zainstaluj Pythona
+            uses: actions/setup-python@v5
+            with:
+              python-version: "3.11"
+
+          - name: Zainstaluj zależności
+            run: |
+              if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+          - name: Uruchom slotchecker w trybie automatycznym
+            run: python slotchecker.py --auto
+
+          - name: Zapisz wygenerowany CSV jako artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: ikea_slots_results
+              path: ikea_slots_results.csv
