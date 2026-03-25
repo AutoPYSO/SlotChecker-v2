@@ -1,10 +1,10 @@
-    name: Uruchamiaj slotchecker raz dziennie
+    name: Uruchamiaj slotchecker
 
     on:
       # Umożliwia ręczne uruchamianie z przycisku w zakładce Actions
       workflow_dispatch:
 
-      # Automatyczne uruchamianie o 21:10 UTC każdego dnia
+      # Automatyczne uruchamianie o xx UTC każdego dnia
       schedule:
         - cron: "5 8,11,14,17,20 * * *"
 
