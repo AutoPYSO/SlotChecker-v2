@@ -1,35 +1,58 @@
-    name: Uruchamiaj slotchecker
+name: Uruchamiaj slotchecker raz dziennie
 
-    on:
-      # Umożliwia ręczne uruchamianie z przycisku w zakładce Actions
-      workflow_dispatch:
+on:
+  # Umożliwia ręczne uruchamianie z przycisku w zakładce Actions
+  workflow_dispatch:
 
-      # Automatyczne uruchamianie o xx UTC każdego dnia
-      schedule:
-        - cron: "5 8,11,14,17,20 * * *"
+  # Automatyczne uruchamianie 5 x dziennie, każdego dnia
+  schedule:
+    - cron: "0 7,10,13,16,19 * * *"
 
-    jobs:
-      run-slotchecker:
-        runs-on: ubuntu-latest
+jobs:
+  run-slotchecker:
+    runs-on: ubuntu-latest
 
-        steps:
-          - name: Pobierz repozytorium
-            uses: actions/checkout@v4
+    # UWAGA: Te uprawnienia są potrzebne, aby workflow mógł robić commit
+    permissions:
+      contents: write
 
-          - name: Zainstaluj Pythona
-            uses: actions/setup-python@v5
-            with:
-              python-version: "3.11"
+    steps:
+      # Krok 1: Pobranie repozytorium (bez zmian)
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v4
 
-          - name: Zainstaluj zależności
-            run: |
-              if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      # Krok 2: Instalacja Pythona (bez zmian)
+      - name: Zainstaluj Pythona
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-          - name: Uruchom slotchecker w trybie automatycznym
-            run: python slotchecker.py --auto
+      # Krok 3: Instalacja zależności (bez zmian)
+      - name: Zainstaluj zależności
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-          - name: Zapisz wygenerowany CSV jako artifact
-            uses: actions/upload-artifact@v4
-            with:
-              name: ikea_slots_results
-              path: ikea_slots_results.csv
+      # Krok 4: Uruchomienie skryptu (bez zmian)
+      - name: Uruchom slotchecker w trybie automatycznym
+        run: python slotchecker.py --auto
+
+      # NOWY KROK 5: Zapisz zmiany w pliku CSV z powrotem do repozytorium
+      - name: Commit and push if it changed
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add ikea_slots_results.csv
+          # Sprawdź, czy są zmiany do zacommitowania
+          if ! git diff --quiet --cached; then
+            git commit -m "Automatyczna aktualizacja danych CSV"
+            git push
+          else
+            echo "Brak zmian w pliku CSV do zapisu."
+          fi
+
+      # Krok 6: Zapisz CSV jako artefakt (opcjonalnie, ale przydatne)
+      - name: Zapisz wygenerowany CSV jako artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ikea_slots_results
+          path: ikea_slots_results.csv
