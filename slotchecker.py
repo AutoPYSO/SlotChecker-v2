@@ -54,7 +54,7 @@ SENTINEL_NO_SLOT = 26
 def sanitize_error_message(msg: str, max_len: int = 300) -> str:
     """
     Czyści komunikat błędu, żeby nie psuł struktury CSV:
-    - usuwa entery (\\n, \\r),
+    - usuwa entery (\n, \r),
     - zamienia je na ' | ',
     - usuwa cudzysłowy podwójne,
     - przycina bardzo długie stacktrace'y.
@@ -75,6 +75,19 @@ def sanitize_error_message(msg: str, max_len: int = 300) -> str:
         msg = msg[:max_len] + "..."
 
     return msg
+
+
+def sanitize_location_name(name: str) -> str:
+    """
+    Czyści nazwę lokalizacji tak, żeby była bezpieczna dla CSV:
+    - usuwa przecinki (dzięki temu nie trzeba cudzysłowów w CSV),
+    - obcina spacje na brzegach.
+    Przykład:
+        "Studio ..., Warszawie, Wola Park" -> "Studio ..., Warszawie Wola Park"
+    """
+    if not name:
+        return ""
+    return name.replace(",", "").strip()
 
 
 # ======================================================================
@@ -702,7 +715,10 @@ class IkeaStorePlanningChecker(BaseIkeaChecker):
             options = []
             for opt in store_select.options:
                 value = (opt.get_attribute("value") or "").strip()
-                label = (opt.text or "").strip()
+                raw_label = (opt.text or "").strip()
+                # Czyścimy nazwę lokalizacji z przecinków,
+                # żeby w CSV nie trzeba było używać cudzysłowów.
+                label = sanitize_location_name(raw_label)
                 if value:
                     options.append((value, label))
             logger.info(f"[Plan] Znaleziono {len(options)} lokalizacji w dropdownie")
@@ -985,7 +1001,10 @@ class IkeaStoreFinalizationChecker(BaseIkeaChecker):
             options = []
             for opt in store_select.options:
                 value = (opt.get_attribute("value") or "").strip()
-                label = (opt.text or "").strip()
+                raw_label = (opt.text or "").strip()
+                # Czyścimy nazwę lokalizacji z przecinków,
+                # żeby w CSV nie trzeba było używać cudzysłowów.
+                label = sanitize_location_name(raw_label)
                 if value:
                     options.append((value, label))
             logger.info(f"[Fin] Znaleziono {len(options)} lokalizacji w dropdownie")
@@ -1373,7 +1392,11 @@ UNIT_LIST = [
 ]
 
 # PUK-lokalizacje = wszystkie powyższe, oprócz RCMP (online)
-PUK_LOCATIONS = [(name, code) for (name, code) in UNIT_LIST if name != "RCMP"]
+PUK_LOCATIONS = [
+    (sanitize_location_name(name), code)
+    for (name, code) in UNIT_LIST
+    if name != "RCMP"
+]
 
 PUK_KITCHENSTORE_URL = "https://www.ikea.com/pl/pl/appointment/planningathome//"
 PUK_SERVICE_NAME = "PUK"
