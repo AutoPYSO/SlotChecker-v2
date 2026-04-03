@@ -1,12 +1,12 @@
-name: Uruchamiaj slotchecker raz dziennie
+name: Uruchamiaj slotchecker co 3h (xx:45)
 
 on:
   # Umożliwia ręczne uruchamianie z przycisku w zakładce Actions
   workflow_dispatch:
 
-  # Automatyczne uruchamianie 5 x dziennie, każdego dnia
+  # Automatyczne uruchamianie co 3h dziennie, każdego dnia
   schedule:
-    - cron: "0 7,10,13,16,19 * * *"
+    - cron: "45 7/3 * * *"
 
 jobs:
   run-slotchecker:
